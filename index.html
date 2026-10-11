@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JCF 2026 — Festival Pass Scanner</title>
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 24px 16px;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 520px;
+      margin: auto;
+    }
+
+    h1 {
+      color: #e53935;
+      font-size: 32px;
+    }
+
+    #reader {
+      background: white;
+      color: black;
+      margin: 20px auto;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      border: 0;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .start {
+      background: #e53935;
+      color: white;
+    }
+
+    .stop {
+      background: #444;
+      color: white;
+    }
+
+    #result {
+      padding: 18px;
+      margin-top: 16px;
+      background: #292929;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>JCF 2026</h1>
+    <p>FESTIVAL PASS SCANNER</p>
+
+    <div id="reader"></div>
+
+    <button class="start" onclick="startScanner()">
+      MULAI SCAN
+    </button>
+
+    <button class="stop" onclick="stopScanner()">
+      HENTIKAN KAMERA
+    </button>
+
+    <div id="result">Kamera belum dimulai.</div>
+  </div>
+
+  <script>
+    let scanner = null;
+    let running = false;
+
+    function showResult(message, success = false) {
+      const box = document.getElementById("result");
+      box.textContent = message;
+      box.style.background = success ? "#176b36" : "#292929";
+    }
+
+    async function startScanner() {
+      if (running) return;
+
+      if (typeof Html5Qrcode === "undefined") {
+        showResult("Library QR gagal dimuat. Periksa internet.");
+        return;
+      }
+
+      scanner = new Html5Qrcode("reader");
+
+      try {
+        await scanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 230, height: 230 }
+          },
+          function(decodedText) {
+            showResult(
+              "QR BERHASIL TERBACA!\n\nKode: " + decodedText,
+              true
+            );
+          },
+          function() {}
+        );
+
+        running = true;
+        showResult("Kamera aktif. Arahkan ke QR tiket.");
+      } catch (error) {
+        scanner = null;
+        showResult(
+          "Kamera gagal dibuka: " +
+          (error.message || String(error))
+        );
+      }
+    }
+
+    async function stopScanner() {
+      if (!scanner || !running) {
+        showResult("Kamera belum aktif.");
+        return;
+      }
+
+      try {
+        await scanner.stop();
+        scanner.clear();
+        scanner = null;
+        running = false;
+        showResult("Kamera telah dihentikan.");
+      } catch (error) {
+        showResult("Gagal menghentikan kamera.");
+      }
+    }
+  </script>
+</body>
+</html>
